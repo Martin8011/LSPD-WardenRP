@@ -1,0 +1,71 @@
+const { Client, GatewayIntentBits, REST, Routes } = require("discord.js");
+const fetch = require("node-fetch");  // Pridajte knižnicu na posielanie HTTP požiadaviek
+
+// 🔑 Sem vložte svoj Discord bot token!
+const TOKEN = "TU_VLOŽTE_VÁŠ_BOT_TOKEN";
+
+// 🔗 Sem vložte Váš Webhook URL
+const WEBHOOK_URL = "https://discord.com/api/webhooks/1356611793203630080/owyoy4vKr5_Wjt5nWNWuYQh3__EQie7z5JgbqEmk7uyIuXGP4hDFZExET4HJqCEt5kOW";
+
+const client = new Client({
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+});
+
+client.once("ready", () => {
+    console.log(`✅ Bot je online! Prihlásený ako ${client.user.tag}`);
+});
+
+// 🌍 Registrácia príkazu /duty
+const commands = [
+    {
+        name: "duty",
+        description: "Zobrazí odkaz na Duty stránku.",
+    },
+];
+
+const rest = new REST({ version: "10" }).setToken(TOKEN);
+
+(async () => {
+    try {
+        console.log("🛠️ Registrujem príkazy...");
+        await rest.put(Routes.applicationCommands("ID_TVOJEJ_APLIKÁCIE"), { body: commands });
+        console.log("✅ Príkazy zaregistrované!");
+    } catch (error) {
+        console.error("❌ Chyba pri registrácii príkazov:", error);
+    }
+})();
+
+// 📢 Odpoveď na príkaz /duty
+client.on("interactionCreate", async (interaction) => {
+    if (!interaction.isChatInputCommand()) return;
+
+    if (interaction.commandName === "duty") {
+        await interaction.reply("🔵 **Začať Duty!** Klikni sem: https://moja-stranka.sk/");
+
+        // Posielame správu na Discord cez Webhook
+        console.log("Odosielam správu na Webhook...");
+        sendToWebhook("🔵 **Začal Duty!** Klikni sem: https://moja-stranka.sk/");
+    }
+});
+
+// Funkcia na poslanie správy do Discord kanála cez Webhook
+async function sendToWebhook(message) {
+    try {
+        const response = await fetch(WEBHOOK_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: message }),
+        });
+
+        if (!response.ok) {
+            console.error("Chyba pri posielaní správy na Webhook:", response.statusText);
+        } else {
+            console.log("Správa bola úspešne odoslaná na Webhook.");
+        }
+    } catch (error) {
+        console.error("Chyba pri pokuse o posielanie na Webhook:", error);
+    }
+}
+
+// 📡 Prihlásenie bota
+client.login(TOKEN);
